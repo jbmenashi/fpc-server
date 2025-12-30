@@ -7,6 +7,8 @@ import { createRequireClerkAuth } from "./middleware/auth.js";
 import healthRoutes from "./routes/health.js";
 import authRoutes from "./routes/auth.js";
 import todosRoutes from "./routes/todos.js";
+import leaguesRoutes from "./routes/leagues.js";
+import contestantsRoutes from "./routes/contestants.js";
 
 dotenv.config();
 
@@ -40,6 +42,8 @@ app.use((req, res, next) => {
 app.use("/health", healthRoutes);
 app.use("", authRoutes);
 app.use("/todos", todosRoutes);
+app.use("/leagues", leaguesRoutes);
+app.use("/contestants", contestantsRoutes);
 
 // ---- Start ----
 async function start() {
