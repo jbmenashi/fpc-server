@@ -9,6 +9,7 @@ import authRoutes from "./routes/auth.js";
 import leaguesRoutes from "./routes/leagues.js";
 import contestantsRoutes from "./routes/contestants.js";
 import draftsRoutes from "./routes/drafts.js";
+import playersRoutes from "./routes/players.js";
 
 dotenv.config();
 
@@ -44,6 +45,7 @@ app.use("", authRoutes);
 app.use("/leagues", leaguesRoutes);
 app.use("/contestants", contestantsRoutes);
 app.use("/drafts", draftsRoutes);
+app.use("/players", playersRoutes);
 
 // ---- Start ----
 async function start() {

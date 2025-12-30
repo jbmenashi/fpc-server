@@ -6,6 +6,39 @@ import Draft from "../models/Draft.js";
 const router = express.Router();
 const requireClerkAuth = getRequireClerkAuth();
 
+router.get("/", requireClerkAuth, async (req, res) => {
+  try {
+    const { leagueId } = req.query;
+    console.log("GET /drafts - Requested leagueId:", leagueId);
+
+    if (!leagueId) {
+      return res.status(400).json({ error: "leagueId query parameter is required" });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(leagueId)) {
+      console.error("VALIDATION FAILED: Invalid leagueId");
+      return res.status(400).json({ error: "Invalid leagueId" });
+    }
+
+    const draft = await Draft.findOne({ leagueId: new mongoose.Types.ObjectId(leagueId) }).lean();
+
+    if (!draft) {
+      console.error("Draft not found for leagueId:", leagueId);
+      return res.status(404).json({ error: "Draft not found for this league" });
+    }
+
+    console.log("✓ Draft found:", draft._id);
+    res.json(draft);
+  } catch (error) {
+    console.error("GET /drafts - Error:", error.message);
+    console.error("Error stack:", error.stack);
+    return res.status(500).json({
+      error: "Failed to get draft",
+      message: error.message,
+    });
+  }
+});
+
 router.get("/:id", requireClerkAuth, async (req, res) => {
   try {
     const { id } = req.params;
@@ -78,7 +111,7 @@ router.post("/", requireClerkAuth, async (req, res) => {
     console.log("Request body (raw):", req.body);
     console.log("Request body (stringified):", JSON.stringify(req.body, null, 2));
 
-    const { leagueId, completed, rounds, currentRound, size, currentPickInRound, order, results } = req.body || {};
+    const { leagueId, completed, rounds, currentRound, size, currentPickInRound, direction, order, results } = req.body || {};
 
     console.log("Extracted values:");
     console.log("  leagueId:", leagueId, "type:", typeof leagueId);
@@ -87,6 +120,7 @@ router.post("/", requireClerkAuth, async (req, res) => {
     console.log("  currentRound:", currentRound, "type:", typeof currentRound);
     console.log("  size:", size, "type:", typeof size);
     console.log("  currentPickInRound:", currentPickInRound, "type:", typeof currentPickInRound);
+    console.log("  direction:", direction, "type:", typeof direction);
     console.log("  order:", order, "type:", typeof order, "length:", Array.isArray(order) ? order.length : "N/A");
     console.log("  results:", results, "type:", typeof results, "length:", Array.isArray(results) ? results.length : "N/A");
 
@@ -155,6 +189,15 @@ router.post("/", requireClerkAuth, async (req, res) => {
         return res.status(400).json(errorResponse);
       }
     }
+
+    if (direction !== undefined) {
+      if (typeof direction !== "string") {
+        console.error("VALIDATION FAILED: direction must be a string");
+        const errorResponse = { error: "direction must be a string" };
+        console.error("Sending 400 response:", errorResponse);
+        return res.status(400).json(errorResponse);
+      }
+    }
     console.log("✓ Optional fields validation passed");
 
     // Validate order array
@@ -209,6 +252,7 @@ router.post("/", requireClerkAuth, async (req, res) => {
       currentRound: currentRound ?? 1,
       size,
       currentPickInRound: currentPickInRound ?? 1,
+      direction: direction ?? "forward", // Use model default if not provided
       order: order ?? [],
       results: results ?? [],
     };
@@ -272,7 +316,7 @@ router.put("/:id", requireClerkAuth, async (req, res) => {
       return res.status(400).json({ error: "Invalid draft ID" });
     }
 
-    const { leagueId, completed, rounds, currentRound, size, currentPickInRound, order, results } = req.body || {};
+    const { leagueId, completed, rounds, currentRound, size, currentPickInRound, direction, order, results } = req.body || {};
 
     console.log("Extracted values:");
     console.log("  leagueId:", leagueId, "type:", typeof leagueId);
@@ -281,6 +325,7 @@ router.put("/:id", requireClerkAuth, async (req, res) => {
     console.log("  currentRound:", currentRound, "type:", typeof currentRound);
     console.log("  size:", size, "type:", typeof size);
     console.log("  currentPickInRound:", currentPickInRound, "type:", typeof currentPickInRound);
+    console.log("  direction:", direction, "type:", typeof direction);
     console.log("  order:", order, "type:", typeof order, "length:", Array.isArray(order) ? order.length : "N/A");
     console.log("  results:", results, "type:", typeof results, "length:", Array.isArray(results) ? results.length : "N/A");
 
@@ -328,6 +373,13 @@ router.put("/:id", requireClerkAuth, async (req, res) => {
       updateData.currentPickInRound = currentPickInRound;
     }
 
+    if (direction !== undefined) {
+      if (typeof direction !== "string") {
+        return res.status(400).json({ error: "direction must be a string" });
+      }
+      updateData.direction = direction;
+    }
+
     if (order !== undefined) {
       if (!Array.isArray(order)) {
         return res.status(400).json({ error: "order must be an array" });
@@ -356,7 +408,7 @@ router.put("/:id", requireClerkAuth, async (req, res) => {
     if (Object.keys(updateData).length === 0) {
       console.error("VALIDATION FAILED: No fields to update");
       const errorResponse = {
-        error: "Body must include at least one field to update (leagueId, completed, rounds, currentRound, size, currentPickInRound, order, or results)",
+        error: "Body must include at least one field to update (leagueId, completed, rounds, currentRound, size, currentPickInRound, direction, order, or results)",
       };
       console.error("Sending 400 response:", errorResponse);
       return res.status(400).json(errorResponse);

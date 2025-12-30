@@ -23,6 +23,7 @@ const draftSchema = new mongoose.Schema(
     currentRound: { type: Number, default: 1 },
     size: { type: Number, required: true },
     currentPickInRound: { type: Number, default: 1 },
+    direction: { type: String, default: "forward" },
     order: [{ type: mongoose.Schema.Types.ObjectId }],
     results: [draftResultSchema],
   },
