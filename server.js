@@ -6,9 +6,9 @@ import { createRemoteJWKSet } from "jose";
 import { createRequireClerkAuth } from "./middleware/auth.js";
 import healthRoutes from "./routes/health.js";
 import authRoutes from "./routes/auth.js";
-import todosRoutes from "./routes/todos.js";
 import leaguesRoutes from "./routes/leagues.js";
 import contestantsRoutes from "./routes/contestants.js";
+import draftsRoutes from "./routes/drafts.js";
 
 dotenv.config();
 
@@ -41,9 +41,9 @@ app.use((req, res, next) => {
 // ---- Routes ----
 app.use("/health", healthRoutes);
 app.use("", authRoutes);
-app.use("/todos", todosRoutes);
 app.use("/leagues", leaguesRoutes);
 app.use("/contestants", contestantsRoutes);
+app.use("/drafts", draftsRoutes);
 
 // ---- Start ----
 async function start() {
