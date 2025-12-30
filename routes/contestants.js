@@ -80,75 +80,59 @@ function validateRoster(roster) {
     return { valid: false, error: "roster must be an object" };
   }
 
-  if (roster.qb1 !== undefined) {
-    const qb1Validation = validatePlayer(roster.qb1, "roster.qb1");
-    if (!qb1Validation.valid) return qb1Validation;
-  }
+  // Helper to validate a roster field (allows null, validates as player if not null)
+  const validateRosterField = (field, fieldName) => {
+    if (field === undefined) {
+      return { valid: true }; // Field not provided, skip validation
+    }
+    if (field === null) {
+      return { valid: true }; // Null is allowed
+    }
+    // If field is provided and not null, validate as player object
+    return validatePlayer(field, fieldName);
+  };
 
-  if (roster.qb2 !== undefined) {
-    const qb2Validation = validatePlayer(roster.qb2, "roster.qb2");
-    if (!qb2Validation.valid) return qb2Validation;
-  }
+  const qb1Validation = validateRosterField(roster.qb1, "roster.qb1");
+  if (!qb1Validation.valid) return qb1Validation;
 
-  if (roster.rb1 !== undefined) {
-    const rb1Validation = validatePlayer(roster.rb1, "roster.rb1");
-    if (!rb1Validation.valid) return rb1Validation;
-  }
+  const qb2Validation = validateRosterField(roster.qb2, "roster.qb2");
+  if (!qb2Validation.valid) return qb2Validation;
 
-  if (roster.rb2 !== undefined) {
-    const rb2Validation = validatePlayer(roster.rb2, "roster.rb2");
-    if (!rb2Validation.valid) return rb2Validation;
-  }
+  const rb1Validation = validateRosterField(roster.rb1, "roster.rb1");
+  if (!rb1Validation.valid) return rb1Validation;
 
-  if (roster.wr1 !== undefined) {
-    const wr1Validation = validatePlayer(roster.wr1, "roster.wr1");
-    if (!wr1Validation.valid) return wr1Validation;
-  }
+  const rb2Validation = validateRosterField(roster.rb2, "roster.rb2");
+  if (!rb2Validation.valid) return rb2Validation;
 
-  if (roster.wr2 !== undefined) {
-    const wr2Validation = validatePlayer(roster.wr2, "roster.wr2");
-    if (!wr2Validation.valid) return wr2Validation;
-  }
+  const wr1Validation = validateRosterField(roster.wr1, "roster.wr1");
+  if (!wr1Validation.valid) return wr1Validation;
 
-  if (roster.wr3 !== undefined) {
-    const wr3Validation = validatePlayer(roster.wr3, "roster.wr3");
-    if (!wr3Validation.valid) return wr3Validation;
-  }
+  const wr2Validation = validateRosterField(roster.wr2, "roster.wr2");
+  if (!wr2Validation.valid) return wr2Validation;
 
-  if (roster.te1 !== undefined) {
-    const te1Validation = validatePlayer(roster.te1, "roster.te1");
-    if (!te1Validation.valid) return te1Validation;
-  }
+  const wr3Validation = validateRosterField(roster.wr3, "roster.wr3");
+  if (!wr3Validation.valid) return wr3Validation;
 
-  if (roster.fl1 !== undefined) {
-    const fl1Validation = validatePlayer(roster.fl1, "roster.fl1");
-    if (!fl1Validation.valid) return fl1Validation;
-  }
+  const te1Validation = validateRosterField(roster.te1, "roster.te1");
+  if (!te1Validation.valid) return te1Validation;
 
-  if (roster.fl2 !== undefined) {
-    const fl2Validation = validatePlayer(roster.fl2, "roster.fl2");
-    if (!fl2Validation.valid) return fl2Validation;
-  }
+  const fl1Validation = validateRosterField(roster.fl1, "roster.fl1");
+  if (!fl1Validation.valid) return fl1Validation;
 
-  if (roster.fl3 !== undefined) {
-    const fl3Validation = validatePlayer(roster.fl3, "roster.fl3");
-    if (!fl3Validation.valid) return fl3Validation;
-  }
+  const fl2Validation = validateRosterField(roster.fl2, "roster.fl2");
+  if (!fl2Validation.valid) return fl2Validation;
 
-  if (roster.fl4 !== undefined) {
-    const fl4Validation = validatePlayer(roster.fl4, "roster.fl4");
-    if (!fl4Validation.valid) return fl4Validation;
-  }
+  const fl3Validation = validateRosterField(roster.fl3, "roster.fl3");
+  if (!fl3Validation.valid) return fl3Validation;
 
-  if (roster.kicker !== undefined) {
-    const kickerValidation = validatePlayer(roster.kicker, "roster.kicker");
-    if (!kickerValidation.valid) return kickerValidation;
-  }
+  const fl4Validation = validateRosterField(roster.fl4, "roster.fl4");
+  if (!fl4Validation.valid) return fl4Validation;
 
-  if (roster.dst !== undefined) {
-    const dstValidation = validatePlayer(roster.dst, "roster.dst");
-    if (!dstValidation.valid) return dstValidation;
-  }
+  const kickerValidation = validateRosterField(roster.kicker, "roster.kicker");
+  if (!kickerValidation.valid) return kickerValidation;
+
+  const dstValidation = validateRosterField(roster.dst, "roster.dst");
+  if (!dstValidation.valid) return dstValidation;
 
   return { valid: true };
 }
@@ -330,95 +314,203 @@ router.post("/", requireClerkAuth, async (req, res) => {
 });
 
 router.put("/:id", requireClerkAuth, async (req, res) => {
-  const { id } = req.params;
-  const { userId, leagueId, managerName, teamName, wcPts, dvPts, ccPts, sbPts, roster } = req.body || {};
+  try {
+    const { id } = req.params;
+    console.log("=== PUT /contestants/:id - START ===");
+    console.log("Contestant ID:", id);
+    console.log("Request body (raw):", req.body);
+    console.log("Request body (stringified):", JSON.stringify(req.body, null, 2));
 
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    return res.status(400).json({ error: "Invalid contestant ID" });
-  }
-
-  const updateData = {};
-
-  if (userId !== undefined) {
-    if (!mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ error: "userId must be a valid ObjectID" });
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      console.error("VALIDATION FAILED: Invalid contestant ID");
+      console.error("  ID value:", id);
+      return res.status(400).json({ error: "Invalid contestant ID" });
     }
-    updateData.userId = new mongoose.Types.ObjectId(userId);
-  }
 
-  if (leagueId !== undefined) {
-    if (!mongoose.Types.ObjectId.isValid(leagueId)) {
-      return res.status(400).json({ error: "leagueId must be a valid ObjectID" });
+    const { userId, leagueId, managerName, teamName, wcPts, dvPts, ccPts, sbPts, roster } = req.body || {};
+
+    console.log("Extracted values:");
+    console.log("  userId:", userId, "type:", typeof userId);
+    console.log("  leagueId:", leagueId, "type:", typeof leagueId);
+    console.log("  managerName:", managerName, "type:", typeof managerName);
+    console.log("  teamName:", teamName, "type:", typeof teamName);
+    console.log("  wcPts:", wcPts, "type:", typeof wcPts);
+    console.log("  dvPts:", dvPts, "type:", typeof dvPts);
+    console.log("  ccPts:", ccPts, "type:", typeof ccPts);
+    console.log("  sbPts:", sbPts, "type:", typeof sbPts);
+    console.log("  roster:", roster, "type:", typeof roster);
+
+    const updateData = {};
+
+    console.log("Validating and processing update fields...");
+
+    if (userId !== undefined) {
+      console.log("Processing userId...");
+      if (!mongoose.Types.ObjectId.isValid(userId)) {
+        console.error("VALIDATION FAILED: userId must be a valid ObjectID");
+        console.error("  userId value:", userId);
+        return res.status(400).json({ error: "userId must be a valid ObjectID" });
+      }
+      updateData.userId = new mongoose.Types.ObjectId(userId);
+      console.log("✓ userId added to updateData");
     }
-    updateData.leagueId = new mongoose.Types.ObjectId(leagueId);
-  }
 
-  if (managerName !== undefined) {
-    if (typeof managerName !== "string") {
-      return res.status(400).json({ error: "managerName must be a string" });
+    if (leagueId !== undefined) {
+      console.log("Processing leagueId...");
+      if (!mongoose.Types.ObjectId.isValid(leagueId)) {
+        console.error("VALIDATION FAILED: leagueId must be a valid ObjectID");
+        console.error("  leagueId value:", leagueId);
+        return res.status(400).json({ error: "leagueId must be a valid ObjectID" });
+      }
+      updateData.leagueId = new mongoose.Types.ObjectId(leagueId);
+      console.log("✓ leagueId added to updateData");
     }
-    updateData.managerName = managerName;
-  }
 
-  if (teamName !== undefined) {
-    if (typeof teamName !== "string") {
-      return res.status(400).json({ error: "teamName must be a string" });
+    if (managerName !== undefined) {
+      console.log("Processing managerName...");
+      if (typeof managerName !== "string") {
+        console.error("VALIDATION FAILED: managerName must be a string");
+        console.error("  managerName value:", managerName);
+        console.error("  managerName type:", typeof managerName);
+        return res.status(400).json({ error: "managerName must be a string" });
+      }
+      updateData.managerName = managerName;
+      console.log("✓ managerName added to updateData");
     }
-    updateData.teamName = teamName;
-  }
 
-  if (wcPts !== undefined) {
-    if (typeof wcPts !== "number") {
-      return res.status(400).json({ error: "wcPts must be a number" });
+    if (teamName !== undefined) {
+      console.log("Processing teamName...");
+      if (typeof teamName !== "string") {
+        console.error("VALIDATION FAILED: teamName must be a string");
+        console.error("  teamName value:", teamName);
+        console.error("  teamName type:", typeof teamName);
+        return res.status(400).json({ error: "teamName must be a string" });
+      }
+      updateData.teamName = teamName;
+      console.log("✓ teamName added to updateData");
     }
-    updateData.wcPts = wcPts;
-  }
 
-  if (dvPts !== undefined) {
-    if (typeof dvPts !== "number") {
-      return res.status(400).json({ error: "dvPts must be a number" });
+    if (wcPts !== undefined) {
+      console.log("Processing wcPts...");
+      if (typeof wcPts !== "number") {
+        console.error("VALIDATION FAILED: wcPts must be a number");
+        console.error("  wcPts value:", wcPts);
+        console.error("  wcPts type:", typeof wcPts);
+        return res.status(400).json({ error: "wcPts must be a number" });
+      }
+      updateData.wcPts = wcPts;
+      console.log("✓ wcPts added to updateData");
     }
-    updateData.dvPts = dvPts;
-  }
 
-  if (ccPts !== undefined) {
-    if (typeof ccPts !== "number") {
-      return res.status(400).json({ error: "ccPts must be a number" });
+    if (dvPts !== undefined) {
+      console.log("Processing dvPts...");
+      if (typeof dvPts !== "number") {
+        console.error("VALIDATION FAILED: dvPts must be a number");
+        console.error("  dvPts value:", dvPts);
+        console.error("  dvPts type:", typeof dvPts);
+        return res.status(400).json({ error: "dvPts must be a number" });
+      }
+      updateData.dvPts = dvPts;
+      console.log("✓ dvPts added to updateData");
     }
-    updateData.ccPts = ccPts;
-  }
 
-  if (sbPts !== undefined) {
-    if (typeof sbPts !== "number") {
-      return res.status(400).json({ error: "sbPts must be a number" });
+    if (ccPts !== undefined) {
+      console.log("Processing ccPts...");
+      if (typeof ccPts !== "number") {
+        console.error("VALIDATION FAILED: ccPts must be a number");
+        console.error("  ccPts value:", ccPts);
+        console.error("  ccPts type:", typeof ccPts);
+        return res.status(400).json({ error: "ccPts must be a number" });
+      }
+      updateData.ccPts = ccPts;
+      console.log("✓ ccPts added to updateData");
     }
-    updateData.sbPts = sbPts;
-  }
 
-  if (roster !== undefined) {
-    const rosterValidation = validateRoster(roster);
-    if (!rosterValidation.valid) {
-      return res.status(400).json({ error: rosterValidation.error });
+    if (sbPts !== undefined) {
+      console.log("Processing sbPts...");
+      if (typeof sbPts !== "number") {
+        console.error("VALIDATION FAILED: sbPts must be a number");
+        console.error("  sbPts value:", sbPts);
+        console.error("  sbPts type:", typeof sbPts);
+        return res.status(400).json({ error: "sbPts must be a number" });
+      }
+      updateData.sbPts = sbPts;
+      console.log("✓ sbPts added to updateData");
     }
-    updateData.roster = roster;
-  }
 
-  if (Object.keys(updateData).length === 0) {
-    return res.status(400).json({
-      error: "Body must include at least one field to update (userId, leagueId, managerName, teamName, wcPts, dvPts, ccPts, sbPts, or roster)",
+    if (roster !== undefined) {
+      console.log("Processing roster...");
+      const rosterValidation = validateRoster(roster);
+      if (!rosterValidation.valid) {
+        console.error("VALIDATION FAILED: roster validation failed");
+        console.error("  Roster validation error:", rosterValidation.error);
+        return res.status(400).json({ error: rosterValidation.error });
+      }
+      updateData.roster = roster;
+      console.log("✓ roster added to updateData");
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      console.error("VALIDATION FAILED: No fields to update");
+      const errorResponse = {
+        error: "Body must include at least one field to update (userId, leagueId, managerName, teamName, wcPts, dvPts, ccPts, sbPts, or roster)",
+      };
+      console.error("Sending 400 response:", errorResponse);
+      return res.status(400).json(errorResponse);
+    }
+
+    console.log("Update data:", JSON.stringify(updateData, null, 2));
+    console.log("Attempting to update contestant in database...");
+
+    const contestant = await Contestant.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true,
     });
+
+    if (!contestant) {
+      console.error("Contestant not found with ID:", id);
+      return res.status(404).json({ error: "Contestant not found" });
+    }
+
+    console.log("✓ Contestant updated successfully");
+    console.log("  Contestant ID:", contestant._id);
+    console.log("=== PUT /contestants/:id - SUCCESS ===");
+    res.json(contestant);
+  } catch (error) {
+    console.error("=== PUT /contestants/:id - ERROR ===");
+    console.error("Error name:", error.name);
+    console.error("Error message:", error.message);
+    console.error("Error stack:", error.stack);
+    if (error.errors) {
+      console.error("Validation errors:", JSON.stringify(error.errors, null, 2));
+    }
+    if (error.code) {
+      console.error("Error code:", error.code);
+    }
+    if (error.keyPattern) {
+      console.error("Error keyPattern:", error.keyPattern);
+    }
+    if (error.keyValue) {
+      console.error("Error keyValue:", error.keyValue);
+    }
+
+    if (error.name === "ValidationError") {
+      const errorResponse = {
+        error: "Validation error",
+        details: error.message,
+        errors: error.errors,
+      };
+      console.error("Sending 400 ValidationError response:", errorResponse);
+      return res.status(400).json(errorResponse);
+    }
+
+    const errorResponse = {
+      error: "Failed to update contestant",
+      message: error.message,
+    };
+    console.error("Sending 500 error response:", errorResponse);
+    return res.status(500).json(errorResponse);
   }
-
-  const contestant = await Contestant.findByIdAndUpdate(id, updateData, {
-    new: true,
-    runValidators: true,
-  });
-
-  if (!contestant) {
-    return res.status(404).json({ error: "Contestant not found" });
-  }
-
-  res.json(contestant);
 });
 
 router.delete("/:id", requireClerkAuth, async (req, res) => {

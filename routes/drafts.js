@@ -111,7 +111,7 @@ router.post("/", requireClerkAuth, async (req, res) => {
     console.log("Request body (raw):", req.body);
     console.log("Request body (stringified):", JSON.stringify(req.body, null, 2));
 
-    const { leagueId, completed, rounds, currentRound, size, currentPickInRound, direction, order, results } = req.body || {};
+    const { leagueId, completed, rounds, currentRound, size, currentPickInRound, overallPick, direction, order, results } = req.body || {};
 
     console.log("Extracted values:");
     console.log("  leagueId:", leagueId, "type:", typeof leagueId);
@@ -120,6 +120,7 @@ router.post("/", requireClerkAuth, async (req, res) => {
     console.log("  currentRound:", currentRound, "type:", typeof currentRound);
     console.log("  size:", size, "type:", typeof size);
     console.log("  currentPickInRound:", currentPickInRound, "type:", typeof currentPickInRound);
+    console.log("  overallPick:", overallPick, "type:", typeof overallPick);
     console.log("  direction:", direction, "type:", typeof direction);
     console.log("  order:", order, "type:", typeof order, "length:", Array.isArray(order) ? order.length : "N/A");
     console.log("  results:", results, "type:", typeof results, "length:", Array.isArray(results) ? results.length : "N/A");
@@ -190,6 +191,15 @@ router.post("/", requireClerkAuth, async (req, res) => {
       }
     }
 
+    if (overallPick !== undefined) {
+      if (typeof overallPick !== "number" || !Number.isInteger(overallPick) || overallPick < 1) {
+        console.error("VALIDATION FAILED: overallPick must be an integer >= 1");
+        const errorResponse = { error: "overallPick must be an integer >= 1" };
+        console.error("Sending 400 response:", errorResponse);
+        return res.status(400).json(errorResponse);
+      }
+    }
+
     if (direction !== undefined) {
       if (typeof direction !== "string") {
         console.error("VALIDATION FAILED: direction must be a string");
@@ -252,6 +262,7 @@ router.post("/", requireClerkAuth, async (req, res) => {
       currentRound: currentRound ?? 1,
       size,
       currentPickInRound: currentPickInRound ?? 1,
+      overallPick: overallPick ?? 1, // Use model default if not provided
       direction: direction ?? "forward", // Use model default if not provided
       order: order ?? [],
       results: results ?? [],
@@ -316,7 +327,7 @@ router.put("/:id", requireClerkAuth, async (req, res) => {
       return res.status(400).json({ error: "Invalid draft ID" });
     }
 
-    const { leagueId, completed, rounds, currentRound, size, currentPickInRound, direction, order, results } = req.body || {};
+    const { leagueId, completed, rounds, currentRound, size, currentPickInRound, overallPick, direction, order, results } = req.body || {};
 
     console.log("Extracted values:");
     console.log("  leagueId:", leagueId, "type:", typeof leagueId);
@@ -325,6 +336,7 @@ router.put("/:id", requireClerkAuth, async (req, res) => {
     console.log("  currentRound:", currentRound, "type:", typeof currentRound);
     console.log("  size:", size, "type:", typeof size);
     console.log("  currentPickInRound:", currentPickInRound, "type:", typeof currentPickInRound);
+    console.log("  overallPick:", overallPick, "type:", typeof overallPick);
     console.log("  direction:", direction, "type:", typeof direction);
     console.log("  order:", order, "type:", typeof order, "length:", Array.isArray(order) ? order.length : "N/A");
     console.log("  results:", results, "type:", typeof results, "length:", Array.isArray(results) ? results.length : "N/A");
@@ -373,6 +385,13 @@ router.put("/:id", requireClerkAuth, async (req, res) => {
       updateData.currentPickInRound = currentPickInRound;
     }
 
+    if (overallPick !== undefined) {
+      if (typeof overallPick !== "number" || !Number.isInteger(overallPick) || overallPick < 1) {
+        return res.status(400).json({ error: "overallPick must be an integer >= 1" });
+      }
+      updateData.overallPick = overallPick;
+    }
+
     if (direction !== undefined) {
       if (typeof direction !== "string") {
         return res.status(400).json({ error: "direction must be a string" });
@@ -408,7 +427,7 @@ router.put("/:id", requireClerkAuth, async (req, res) => {
     if (Object.keys(updateData).length === 0) {
       console.error("VALIDATION FAILED: No fields to update");
       const errorResponse = {
-        error: "Body must include at least one field to update (leagueId, completed, rounds, currentRound, size, currentPickInRound, direction, order, or results)",
+        error: "Body must include at least one field to update (leagueId, completed, rounds, currentRound, size, currentPickInRound, overallPick, direction, order, or results)",
       };
       console.error("Sending 400 response:", errorResponse);
       return res.status(400).json(errorResponse);
