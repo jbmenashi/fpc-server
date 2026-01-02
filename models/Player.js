@@ -7,6 +7,8 @@ const playerSchema = new mongoose.Schema(
     position: { type: String, required: true },
     teamId: { type: Number, required: true },
     teamName: { type: String, required: true },
+    playerPhoto: { type: String },
+    teamPhoto: { type: String },
   },
   { timestamps: true }
 );
