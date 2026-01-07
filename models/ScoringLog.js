@@ -7,6 +7,7 @@ const scoringLogSchema = new mongoose.Schema(
     timestamp: { type: String, required: true },
     playerId: { type: Number, required: true },
     playerName: { type: String, required: true },
+    position: { type: String, required: true },
     playerPhoto: { type: String },
     teamName: { type: String, required: true },
     teamPhoto: { type: String },
